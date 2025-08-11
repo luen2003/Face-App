@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Face Recognition App</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+
+<body class="container mt-5">
+
+    <h2>Face Recognition & Analysis</h2>
+
+    <!-- Thông báo -->
+    {% if message %}
+    <div class="alert alert-info">{{ message }}</div>
+    {% endif %}
+
+    <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label>Chọn chế độ:</label>
+            <select class="form-select" name="upload_type" id="upload_type" onchange="toggleNameField()" required>
+                <option value="add">📁 Thêm ảnh vào thư viện</option>
+                <option value="analyze">🔍 Phân tích & nhận diện</option>
+            </select>
+        </div>
+
+        <div class="mb-3" id="name_field">
+            <label>Nhập tên người:</label>
+            <input type="text" class="form-control" name="person_name" placeholder="Ví dụ: TaDinhLuong">
+        </div>
+
+        <div class="mb-3">
+            <label>Chọn ảnh từ máy:</label>
+            <input type="file" class="form-control" name="file" accept="image/*">
+        </div>
+
+        <div class="mb-3">
+            <label>Hoặc chụp ảnh trực tiếp:</label><br>
+            <video id="video" width="320" height="240" autoplay></video><br>
+            <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="capture()">📷 Chụp ảnh</button>
+            <button type="button" class="btn btn-outline-danger btn-sm mt-2" onclick="stopCamera()">Tắt camera</button>
+            <button type="button" class="btn btn-outline-success btn-sm mt-2" onclick="startCamera()">Bật
+                camera</button>
+            <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+            <input type="hidden" name="image_data" id="image_data">
+
+            <div class="mt-2" id="preview" style="display: none;">
+                <label>Ảnh vừa chụp:</label><br>
+                <img id="captured_image" src="" width="320" height="240" class="border">
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success">Gửi ảnh</button>
+    </form>
+
+    {% if result %}
+    <hr>
+    <h3>Kết quả phân tích:</h3>
+    <div class="row">
+        {% if matched_filename %}
+        <div class="col-md-4">
+            <p><strong>Đối chiếu với:</strong></p>
+            <img src="{{ matched_filename }}" width="200" />
+        </div>
+        {% endif %}
+
+        {% if captured_image %}
+        <div class="col-md-4">
+            <p><strong>Ảnh phân tích (ảnh mới):</strong></p>
+            <img src="{{ captured_image }}" width="200" />
+        </div>
+        {% endif %}
+    </div>
+    <ul class="list-group mt-3">
+        <li class="list-group-item"><strong>Tên:</strong> {{ name }}</li>
+        <li class="list-group-item"><strong>Tuổi:</strong> {{ result.age }}</li>
+        <li class="list-group-item"><strong>Giới tính:</strong> {{ result.gender }}</li>
+        <li class="list-group-item"><strong>Cảm xúc:</strong> {{ result.emotion }}</li>
+    </ul>
+    {% endif %}
+
+    <script>
+        let mediaStream = null;
+
+        function startCamera() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function (stream) {
+                    mediaStream = stream;
+                    document.getElementById('video').srcObject = stream;
+                })
+                .catch(function (error) {
+                    console.error("Không thể bật camera: ", error);
+                });
+        }
+
+        function stopCamera() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                document.getElementById('video').srcObject = null;
+            }
+        }
+
+        function capture() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataURL = canvas.toDataURL('image/jpeg');
+            document.getElementById('image_data').value = dataURL;
+
+            const img = document.getElementById('captured_image');
+            img.src = dataURL;
+            document.getElementById('preview').style.display = 'block';
+        }
+
+        function toggleNameField() {
+            const uploadType = document.getElementById('upload_type').value;
+            const nameField = document.getElementById('name_field');
+            nameField.style.display = (uploadType === 'add') ? 'block' : 'none';
+        }
+
+        window.onload = function () {
+            toggleNameField();
+            startCamera();
+        };
+    </script>
+</body>
+
+</html>
