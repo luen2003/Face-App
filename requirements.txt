@@ -3,3 +3,4 @@ deepface==0.0.95
 torch==2.0.1
 opencv-python-headless==4.8.1.78
 tensorflow==2.13.0
+pyinstaller==6.4.0
